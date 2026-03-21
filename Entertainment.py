@@ -16,7 +16,7 @@ HOST = os.environ.get("HOST", "0.0.0.0")
 PROXY_PATH = "/proxy?url="
 
 CHANNELS = {
-    # -- Web players --
+    # -- Web players --  
     "1": {"name": "Willow TV",               "url": "https://dadocric.st/player.php?id=willow",      "type": "web"},
     "2": {"name": "Willow Extra",             "url": "https://dadocric.st/player.php?id=willowextra", "type": "web"},
     "3": {"name": "PTV Sports",               "url": "https://dadocric.st/player.php?id=ptvsp",       "type": "web"},
@@ -1140,16 +1140,21 @@ class Handler(BaseHTTPRequestHandler):
                 # If it's an m3u8 playlist, rewrite segment URLs to go through /hlsproxy
                 if b'#EXTM3U' in raw[:20] or target.endswith('.m3u8') or 'mpegurl' in ctype.lower():
                     base = target.rsplit('/', 1)[0] + '/'
+                    def _abs(seg):
+                        if seg.startswith('http://') or seg.startswith('https://'):
+                            return seg
+                        return base + seg
+                    def _prx(seg):
+                        return '/hlsproxy?url=' + urllib.parse.quote(_abs(seg), safe='')
+                    import re as _re
                     lines = raw.decode('utf-8', errors='replace').splitlines()
                     out = []
                     for line in lines:
                         stripped = line.strip()
                         if stripped and not stripped.startswith('#'):
-                            if stripped.startswith('http://') or stripped.startswith('https://'):
-                                abs_seg = stripped
-                            else:
-                                abs_seg = base + stripped
-                            line = '/hlsproxy?url=' + urllib.parse.quote(abs_seg, safe='')
+                            line = _prx(stripped)
+                        elif stripped.startswith('#') and 'URI="' in line:
+                            line = _re.sub(r'URI="([^"]+)"', lambda m: 'URI="' + _prx(m.group(1)) + '"', line)
                         out.append(line)
                     raw = '\n'.join(out).encode('utf-8')
                     ctype = 'application/vnd.apple.mpegurl'
