@@ -3,7 +3,11 @@
     "allow": [
       "Bash(start python:*)",
       "Bash(gh api:*)",
-      "WebFetch(domain:api.github.com)"
+      "WebFetch(domain:api.github.com)",
+      "WebFetch(domain:stream.crichd.sc)",
+      "WebFetch(domain:stream.crichd.vip)",
+      "WebFetch(domain:103.89.248.18)",
+      "WebFetch(domain:chanel.dekhaott.com)"
     ]
   }
 }

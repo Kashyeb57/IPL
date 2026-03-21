@@ -29,7 +29,15 @@ CHANNELS = {
     "9": {"name": "Cricket Gold",             "url": "https://streams2.sofast.tv/scheduler/scheduleMaster/418.m3u8", "type": "hls"},
     "10": {"name": "DSTV (614p)",             "url": "http://46.249.95.140:8081/hls/data.m3u8",                 "type": "hls"},
     "11": {"name": "Star Sports 2 (Old)",     "url": "http://tvn1.chowdhury-shaheb.com/starsport2/index.m3u8", "type": "hls"},
-    
+    "12": {"name": "Star Sports HD1",         "url": "http://116.90.120.151:8000/play/a0gs/index.m3u8",        "type": "hls"},
+    # -- CricHD Web Players --
+    "13": {"name": "Star Sports 1 (CricHD)",  "url": "https://stream.crichd.vip/update/star.php",         "type": "web"},
+    "14": {"name": "Star Sports 1 Hindi",     "url": "https://stream.crichd.vip/update/star1hi.php",      "type": "web"},
+    "15": {"name": "Fox Sports (CricHD)",     "url": "https://stream.crichd.vip/update/fox1.php",          "type": "web"},
+    "16": {"name": "Sky Sports (CricHD)",     "url": "https://stream.crichd.vip/update/skys2.php",         "type": "web"},
+    "17": {"name": "Ten Sports (CricHD)",     "url": "https://stream.crichd.vip/update/ten.php",           "type": "web"},
+    "18": {"name": "Willow Cricket (CricHD)", "url": "https://stream.crichd.vip/update/willowcricket.php", "type": "web"},
+    "19": {"name": "PTV Sports (CricHD)",     "url": "https://stream.crichd.vip/update/ptv.php",           "type": "web"},
 }
 
 
