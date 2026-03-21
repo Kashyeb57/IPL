@@ -2,6 +2,7 @@ import sys
 import json
 import re
 import ssl
+import os
 import threading
 import webbrowser
 import socketserver
@@ -10,9 +11,9 @@ import urllib.parse
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from urllib.parse import urlparse, parse_qs
 
-PORT = 6789
-PROXY_HOST = f"http://localhost:{PORT}"
-PROXY_HOST_ALT = f"http://127.0.0.1:{PORT}"
+PORT = int(os.environ.get("PORT", "6789"))
+HOST = os.environ.get("HOST", "0.0.0.0")
+PROXY_PATH = "/proxy?url="
 
 CHANNELS = {
     # -- Web players --
@@ -65,7 +66,7 @@ _INJECT = (
     'div[style*="position: absolute"][style*="top: -65"]'
     '{display:none!important}'
     '</style>'
-    f'<script>var __PXY_BASE="{PROXY_HOST}/proxy?url=";var __PXY_BASE_ALT="{PROXY_HOST_ALT}/proxy?url=";'
+    f'<script>var __PXY_BASE="{PROXY_PATH}";var __PXY_BASE_ALT="{PROXY_PATH}";'
     'window.open=function(){return null;};'
     '(function(){'
     'var AD=/1win|adzilla|casino|superbonus|clickadu|exoclick|trafficjunky|propellerads|geographicalpaperworkmovie|aclib|histats|adservice|doubleclick|googlesyndication|adnxs|taboola|outbrain|popcash|adroll|banner/i;'
@@ -256,7 +257,7 @@ _INJECT_LIGHT = (
     'footer,[class*="footer"],[id*="footer"]'
     '{display:none!important}'
     '</style>'
-    f'<script>var __PXY_BASE="{PROXY_HOST}/proxy?url=";var __PXY_BASE_ALT="{PROXY_HOST_ALT}/proxy?url=";'
+    f'<script>var __PXY_BASE="{PROXY_PATH}";var __PXY_BASE_ALT="{PROXY_PATH}";'
     'window.open=function(){return null;};'
     '(function(){'
     'var AD_IFRAME=/doubleclick|googlesyndication|aclib|histats|chatango|adservice|popcash|adnxs|taboola|outbrain|adroll/i;'
@@ -371,7 +372,7 @@ def fetch_and_clean(url):
             return tag
         if src.startswith('/proxy?url='):
             return tag
-        if src.startswith(f'{PROXY_HOST}/proxy?url=') or src.startswith(f'{PROXY_HOST_ALT}/proxy?url='):
+        if src.startswith(PROXY_PATH):
             return tag
 
         if src.startswith('//'):
@@ -386,7 +387,7 @@ def fetch_and_clean(url):
             return tag
 
         if abs_src.startswith(('http://', 'https://')):
-            new_src = f'{PROXY_HOST}/proxy?url=' + urllib.parse.quote(abs_src, safe='')
+            new_src = PROXY_PATH + urllib.parse.quote(abs_src, safe='')
             tag = tag[:src_match.start()] + f'src="{new_src}"' + tag[src_match.end():]
 
         if 'allow=' not in tag.lower():
@@ -1058,7 +1059,7 @@ def build_html() -> str:
           setTimeout(function(){{ _unmuteMo.disconnect(); }}, 30000);
         }} catch(e) {{}}
       }};
-      _fr.src = '{PROXY_HOST}/proxy?url=' + encodeURIComponent(ch.url);
+      _fr.src = '{PROXY_PATH}' + encodeURIComponent(ch.url);
     }}
   }}
 </script>
@@ -1150,11 +1151,13 @@ class ReusableHTTPServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
 
 def main():
-    server = ReusableHTTPServer(("127.0.0.1", PORT), Handler)
-    url = f"http://localhost:{PORT}"
+    server = ReusableHTTPServer((HOST, PORT), Handler)
+    display_host = "localhost" if HOST == "0.0.0.0" else HOST
+    url = f"http://{display_host}:{PORT}"
     print(f"IPL Robust Dashboard -> {url}")
     print("Press Ctrl+C to stop.\n")
-    threading.Timer(0.8, lambda: webbrowser.open(url)).start()
+    if os.environ.get("OPEN_BROWSER", "1") == "1" and HOST in ("127.0.0.1", "localhost", "0.0.0.0") and not os.environ.get("PORT"):
+        threading.Timer(0.8, lambda: webbrowser.open(url)).start()
     try:
         server.serve_forever()
     except KeyboardInterrupt:
