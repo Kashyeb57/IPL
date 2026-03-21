@@ -29,8 +29,7 @@ CHANNELS = {
     "9": {"name": "Cricket Gold",             "url": "https://streams2.sofast.tv/scheduler/scheduleMaster/418.m3u8", "type": "hls"},
     "10": {"name": "DSTV (614p)",             "url": "http://46.249.95.140:8081/hls/data.m3u8",                 "type": "hls"},
     "11": {"name": "Star Sports 2 (Old)",     "url": "http://tvn1.chowdhury-shaheb.com/starsport2/index.m3u8", "type": "hls"},
-    "12": {"name": "Star Sports HD1",         "url": "http://116.90.120.151:8000/play/a0gs/index.m3u8",        "type": "hls"},
-    "13": {"name": "Star Sports 1 Hindi HD",  "url": "https://jiaotvpllive.otvpllive.net/bpk-tv/Star_Sports_1_Hindi_HD1_Hindi_BTS/output/index.m3u8", "type": "hls"},
+    
 }
 
 

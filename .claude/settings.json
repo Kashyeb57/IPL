@@ -1,7 +1,9 @@
 {
   "permissions": {
     "allow": [
-      "Bash(start python:*)"
+      "Bash(start python:*)",
+      "Bash(gh api:*)",
+      "WebFetch(domain:api.github.com)"
     ]
   }
 }
