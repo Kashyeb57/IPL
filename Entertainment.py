@@ -11,8 +11,8 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 from urllib.parse import urlparse, parse_qs
 
 PORT = 6789
-PROXY_HOST = f"http://127.0.0.1:{PORT}"
-PROXY_HOST_ALT = f"http://localhost:{PORT}"
+PROXY_HOST = f"http://localhost:{PORT}"
+PROXY_HOST_ALT = f"http://127.0.0.1:{PORT}"
 
 CHANNELS = {
     # -- Web players --
@@ -37,6 +37,7 @@ _AD_PAT = '|'.join([
     'taboola', 'outbrain', r'adsrvr\.org', 'propellerads', r'popcash\.net',
     'exoclick', 'trafficjunky', 'trafficstars', 'adsterra',
     'hilltopads', 'juicyads', 'plugrush', 'clickadu',
+    'chatango', r'cbox\.ws',
 ])
 
 _INJECT = (
@@ -51,14 +52,16 @@ _INJECT = (
     '[id*="cid00200"],'
     '.col-span-3'
     '{display:none!important}'
-    # Hide chat widget (Chatango) in all forms
+    # Hide chat widget (Chatango) in all forms — including CricHD right-panel wrappers
     '#ch,[id*="chatango"],[class*="chatango"],'
+    '#cxch,[id*="cxch"],[class*="cxch"],'
+    '#cxbox,[id*="cxbox"],[class*="cxbox"],'
     'iframe[src*="chatango"],iframe[src*="cbox.ws"],'
-    # Hide the UNLOCK CLICK button and any fixed/absolute overlay buttons
-    '[style*="position: fixed"],[style*="position:fixed"],'
-    '[style*="z-index: 9999"],[style*="z-index:9999"],'
+    '[id*="chat-box"],[class*="chat-box"],'
+    '.right-panel,.rightPanel,#right-panel,#rightPanel'
+    '{display:none!important}'
+    # Hide fixed/absolute overlays that are NOT the unmute button (handled by JS instead)
     'button[style*="background"][style*="position"],'
-    'div[style*="position: absolute"][style*="top: 50"],'
     'div[style*="position: absolute"][style*="top: -65"]'
     '{display:none!important}'
     '</style>'
@@ -111,14 +114,30 @@ _INJECT = (
     '}catch(e){}'
     '}'
     'function killAds(){'
+    # First pass: unmute buttons — unhide them if CSS hid them, click, then re-hide
+    'document.querySelectorAll("button,div,span,a,input,p").forEach(function(el){'
+    'var txt=((el.textContent||el.value||el.getAttribute("aria-label")||"")+"").replace(/\\s+/g," ").trim().toUpperCase();'
+    'if(/UNMUTE|CLICK HERE TO UNMUTE|SOUND ON|TURN ON SOUND|ENABLE SOUND|AUDIO ON/.test(txt)&&txt.length<60){'
+    'var prev=el.style.display;'
+    'el.style.display="";'
+    'try{el.click();el.dispatchEvent(new MouseEvent("click",{bubbles:true,cancelable:true}));}catch(e){}'
+    'el.style.display="none";'
+    'return;'
+    '}'
+    '});'
     'forceUnmute();'
     # Proxy runtime-created iframes and remove only known ad iframes
     'document.querySelectorAll("iframe").forEach(proxyIframe);'
+    # Hide elements whose text content contains adzilla (catches image-based ads by their link text)
+    'document.querySelectorAll("a,div,section,aside").forEach(function(el){'
+    'if(/adzilla/i.test(el.textContent||"")){'
+    'el.style.display="none";'
+    '}'
+    '});'
     # Auto-click and hide the UNLOCK / overlay buttons
     'document.querySelectorAll("button,div,span,a,input").forEach(function(el){'
     'var txt=((el.textContent||el.value||el.getAttribute("aria-label")||"")+"").replace(/\\s+/g," ").trim().toUpperCase();'
-    'if(/UNMUTE/.test(txt)){try{el.click();}catch(e){}return;}'
-    'if(UNLOCK.test(txt)||txt==="CLICK"){' 
+    'if(UNLOCK.test(txt)||txt==="CLICK"){'
     'try{el.click();}catch(e){}'
     'el.style.pointerEvents="none";'
     'el.style.display="none";'
@@ -175,6 +194,37 @@ _INJECT = (
     'if(!d||typeof d!=="object")return;'
     'if(d.__LOCAL_PROXY_CTRL__==="unmute"){setMediaMute(false);clickUnmuteButtons();fanoutControl("unmute");killAds();}'
     'if(d.__LOCAL_PROXY_CTRL__==="mute"){setMediaMute(true);fanoutControl("mute");}'
+    'if(d.__LOCAL_PROXY_CTRL__==="fsvid"){'
+    'var vids=document.querySelectorAll("video");'
+    'if(vids.length>0){'
+    'document.documentElement.style.cssText="background:#000!important";'
+    'document.body.style.cssText="margin:0!important;padding:0!important;background:#000!important;overflow:hidden!important";'
+    'vids.forEach(function(v){v.style.cssText="position:fixed!important;top:0!important;left:0!important;width:100vw!important;height:100vh!important;z-index:99999!important;object-fit:contain!important";});'
+    'return;'
+    '}'
+    'var _skipPat=/chatango|cbox\\.ws|doubleclick|googlesyndication|adzilla|adnxs|taboola|outbrain|popcash|chat\\.js/i;'
+    'var biggest=null,bigArea=0,videoFr=null;'
+    'document.querySelectorAll("iframe").forEach(function(f){'
+    'var s=(f.src||f.getAttribute("src")||"");'
+    'if(_skipPat.test(s))return;'
+    'try{if(!videoFr&&f.contentDocument&&f.contentDocument.querySelectorAll("video").length>0)videoFr=f;}catch(e){}'
+    'var a=f.offsetWidth*f.offsetHeight;if(a>bigArea){bigArea=a;biggest=f;}'
+    '});'
+    'var pf=videoFr||biggest;'
+    'if(!pf||bigArea===0){setTimeout(function(){window.postMessage({__LOCAL_PROXY_CTRL__:"fsvid"},"*");},700);return;}'
+    'var el=pf;'
+    'while(el&&el.parentElement&&el.parentElement!==document.documentElement){'
+    'var par=el.parentElement;'
+    'Array.from(par.children).forEach(function(ch){if(ch!==el)ch.style.setProperty("display","none","important");});'
+    'el=par;'
+    '}'
+    'document.documentElement.style.setProperty("background","#000","important");'
+    'document.body.style.setProperty("background","#000","important");'
+    'document.body.style.setProperty("margin","0","important");'
+    'document.body.style.setProperty("overflow","hidden","important");'
+    'pf.style.cssText="position:fixed!important;top:0!important;left:0!important;width:100vw!important;height:100vh!important;z-index:99999!important;border:none!important;display:block!important";'
+    'document.querySelectorAll("iframe").forEach(function(f){try{f.contentWindow.postMessage({__LOCAL_PROXY_CTRL__:"fsvid"},"*");}catch(e){}});'
+    '}'
     '});'
     'document.addEventListener("DOMContentLoaded",killAds);'
     'setTimeout(killAds,300);setTimeout(killAds,1000);setTimeout(killAds,3000);setTimeout(killAds,6000);'
@@ -182,6 +232,10 @@ _INJECT = (
     'setInterval(killAds,1500);'
     'var mo=new MutationObserver(killAds);'
     'mo.observe(document.documentElement,{childList:true,subtree:true});'
+    # Double-click → postMessage to parent (capture phase so player handlers can't block it)
+    'function _sendDbl(){try{window.top.postMessage({__LOCAL_PROXY_CTRL__:"dblclick"},"*");}catch(ex){}}'
+    'document.addEventListener("dblclick",_sendDbl,true);'
+    'window.addEventListener("dblclick",_sendDbl,true);'
     '})();'
     '</script>'
 )
@@ -189,7 +243,17 @@ _INJECT = (
 _INJECT_LIGHT = (
     '<style>'
     '#floated,header,nav,footer,[id*="cid00200"],'
-    '[class*="chat"],[id*="chat"],[class*="Chat"],[id*="Chat"]'
+    '[class*="chat"],[id*="chat"],[class*="Chat"],[id*="Chat"],'
+    '#ch,[id*="chatango"],[class*="chatango"],'
+    '#cxch,[id*="cxch"],[class*="cxch"],'
+    '#cxbox,[id*="cxbox"],[class*="cxbox"],'
+    'iframe[src*="chatango"],iframe[src*="cbox.ws"],'
+    'iframe[src*="chatango" i],iframe[src*="cbox" i],'
+    '.right-panel,.rightPanel,#right-panel,#rightPanel,'
+    '.col-span-3,.col-md-3,.col-lg-3,.col-sm-3,'
+    '[class*="adzilla"],[id*="adzilla"],'
+    '[class*="share"],[id*="share"],[class*="social"],[id*="social"],'
+    'footer,[class*="footer"],[id*="footer"]'
     '{display:none!important}'
     '</style>'
     f'<script>var __PXY_BASE="{PROXY_HOST}/proxy?url=";var __PXY_BASE_ALT="{PROXY_HOST_ALT}/proxy?url=";'
@@ -199,11 +263,13 @@ _INJECT_LIGHT = (
     'function absUrl(u){try{return new URL(u,window.location.href).href;}catch(e){return "";}}'
     'function proxyIframe(el){'
     'var raw=el.getAttribute("src")||"";if(!raw)return;'
-    'if(raw.indexOf("/proxy?url=")===0||raw.indexOf(__PXY_BASE)===0||raw.indexOf(__PXY_BASE_ALT)===0)return;'
+    'if(raw.indexOf("/proxy?url=")===0||raw.indexOf(__PXY_BASE)===0||raw.indexOf(__PXY_BASE_ALT)===0){'
+    'if(AD_IFRAME.test(raw)){el.style.setProperty("display","none","important");el.src="about:blank";}return;'
+    '}'
     'if(/^(about:|javascript:|data:|blob:)/i.test(raw))return;'
     'var abs=absUrl(raw);if(!abs)return;'
     'if(abs.indexOf(__PXY_BASE)===0||abs.indexOf(__PXY_BASE_ALT)===0)return;'
-    'if(AD_IFRAME.test(abs)){el.style.display="none";el.src="about:blank";return;}'
+    'if(AD_IFRAME.test(abs)){el.style.setProperty("display","none","important");el.src="about:blank";return;}'
     'if(/^https?:/i.test(abs)){el.setAttribute("src",__PXY_BASE+encodeURIComponent(abs));}'
     '}'
     'function setMediaMute(muted){'
@@ -213,11 +279,28 @@ _INJECT_LIGHT = (
     '}'
     'function clickUnmute(){document.querySelectorAll("button,div,span,a,input").forEach(function(el){var t=((el.textContent||el.value||el.getAttribute("aria-label")||"")+"").replace(/\\s+/g," ").trim().toUpperCase();if(/UNMUTE|SOUND ON|TURN ON SOUND|ENABLE SOUND|AUDIO ON|CLICK HERE TO UNMUTE/.test(t)){try{el.click();}catch(e){}}});}'
     'function fanoutControl(cmd){document.querySelectorAll("iframe").forEach(function(fr){try{if(fr.offsetWidth>100&&fr.offsetHeight>100){if(fr&&fr.contentWindow){fr.contentWindow.postMessage({__LOCAL_PROXY_CTRL__:cmd},"*");}}}catch(e){}});}'
-    'function sweep(){document.querySelectorAll("iframe").forEach(proxyIframe);var f=document.getElementById("floated");if(f)f.style.display="none";}'
+    'function sweep(){'
+    'document.querySelectorAll("iframe").forEach(function(f){'
+    'proxyIframe(f);'
+    'var raw=(f.getAttribute("src")||"");'
+    'if(AD_IFRAME.test(raw)){'
+    'f.style.setProperty("display","none","important");f.src="about:blank";'
+    'var p=f.parentElement;var st=0;'
+    'while(p&&p!==document.body&&st<4){'
+    'if(p.offsetWidth>0&&p.offsetWidth<window.innerWidth*0.55)'
+    '{p.style.setProperty("display","none","important");}p=p.parentElement;st++;}'
+    '}'
+    '});'
+    'var f=document.getElementById("floated");if(f)f.style.display="none";'
+    'document.querySelectorAll(".col-span-3,.col-md-3,.col-lg-3,aside,[id*=cid00200],[class*=chatango],[id*=chatango],[class*=chat-box],[id*=chat-box]").forEach(function(e){e.style.setProperty("display","none","important");});'
+    '}'
     'function unmute(){setMediaMute(false);clickUnmute();fanoutControl("unmute");try{if(window.player){if(typeof window.player.unMute==="function")window.player.unMute();if(typeof window.player.unmute==="function")window.player.unmute();if(typeof window.player.setVolume==="function")window.player.setVolume(100);if("muted" in window.player)window.player.muted=false;}}catch(e){}}'
-    'window.addEventListener("message",function(ev){var d=ev&&ev.data;if(!d||typeof d!=="object")return;if(d.__LOCAL_PROXY_CTRL__==="unmute"){unmute();}if(d.__LOCAL_PROXY_CTRL__==="mute"){setMediaMute(true);fanoutControl("mute");}});'
+    'window.addEventListener("message",function(ev){var d=ev&&ev.data;if(!d||typeof d!=="object")return;if(d.__LOCAL_PROXY_CTRL__==="unmute"){unmute();}if(d.__LOCAL_PROXY_CTRL__==="mute"){setMediaMute(true);fanoutControl("mute");}if(d.__LOCAL_PROXY_CTRL__==="fsvid"){var vids=document.querySelectorAll("video");if(vids.length>0){document.documentElement.style.cssText="background:#000!important";document.body.style.cssText="margin:0!important;padding:0!important;background:#000!important;overflow:hidden!important";vids.forEach(function(v){v.style.cssText="position:fixed!important;top:0!important;left:0!important;width:100vw!important;height:100vh!important;z-index:99999!important;object-fit:contain!important";});return;}var _skipPat=/chatango|cbox\.ws|doubleclick|googlesyndication|adzilla|adnxs|taboola|outbrain|popcash|chat\.js/i;var biggest=null,bigArea=0,videoFr=null;document.querySelectorAll("iframe").forEach(function(f){var s=(f.src||f.getAttribute("src")||"");if(_skipPat.test(s))return;try{if(!videoFr&&f.contentDocument&&f.contentDocument.querySelectorAll("video").length>0)videoFr=f;}catch(e){}var a=f.offsetWidth*f.offsetHeight;if(a>bigArea){bigArea=a;biggest=f;}});var pf=videoFr||biggest;if(!pf||bigArea===0){setTimeout(function(){window.postMessage({__LOCAL_PROXY_CTRL__:"fsvid"},"*");},700);return;}var el=pf;while(el&&el.parentElement&&el.parentElement!==document.documentElement){var par=el.parentElement;Array.from(par.children).forEach(function(ch){if(ch!==el)ch.style.setProperty("display","none","important");});el=par;}document.documentElement.style.setProperty("background","#000","important");document.body.style.setProperty("background","#000","important");document.body.style.setProperty("margin","0","important");document.body.style.setProperty("overflow","hidden","important");pf.style.cssText="position:fixed!important;top:0!important;left:0!important;width:100vw!important;height:100vh!important;z-index:99999!important;border:none!important;display:block!important";document.querySelectorAll("iframe").forEach(function(f){try{f.contentWindow.postMessage({__LOCAL_PROXY_CTRL__:"fsvid"},"*");}catch(e){}});}});'
     'document.addEventListener("click",function(){unmute();},true);'
     'document.addEventListener("DOMContentLoaded",function(){sweep();unmute();});'
+    'function _sendDbl(){try{window.top.postMessage({__LOCAL_PROXY_CTRL__:"dblclick"},"*");}catch(ex){}}'
+    'document.addEventListener("dblclick",_sendDbl,true);'
+    'window.addEventListener("dblclick",_sendDbl,true);'
     'setTimeout(unmute,300);setTimeout(unmute,1000);setTimeout(unmute,2400);setTimeout(unmute,5000);setTimeout(unmute,9000);'
     'setInterval(sweep,1500);'
     'var mo=new MutationObserver(function(){sweep();});mo.observe(document.documentElement,{childList:true,subtree:true});'
@@ -333,8 +416,18 @@ def fetch_and_clean(url):
     html = re.sub(r'\bvolume\s*:\s*0\b', 'volume:100', html, flags=re.IGNORECASE)
     html = re.sub(r'\bdefaultMuted\s*=\s*true\b', 'defaultMuted=false', html, flags=re.IGNORECASE)
 
-    # Use a lighter injector for fragile cricket player hosts to avoid breaking playback
+    # For dadocric.st wrapper pages: strip chatango init scripts and containers server-side
     host = (parsed.netloc or '').lower()
+    if 'dadocric.st' in host:
+        # Strip any inline <script> that references chatango
+        html = re.sub(r'<script[^>]*>[^<]*chatango[^<]*</script>', '', html, flags=re.IGNORECASE)
+        html = re.sub(r'<script[^>]*>.*?chatango.*?</script>', '', html, flags=re.DOTALL | re.IGNORECASE)
+        # Neutralise cid00200 chatango embed containers (replace opening tag → hidden)
+        html = re.sub(r'<div([^>]*)id="cid00200([^"]*)"', r'<div\1id="cid00200\2" style="display:none!important"', html, flags=re.IGNORECASE)
+        # Neutralise any <div class="...col-span-3..."> right-column container
+        html = re.sub(r'(<div[^>]*class="[^"]*\bcol-span-3\b[^"]*")', r'\1 style="display:none!important"', html, flags=re.IGNORECASE)
+
+    # Use a lighter injector for fragile cricket player hosts to avoid breaking playback
     use_light = any(x in host for x in ('dadocric.st', 'playerado.top', 'player0003.com'))
     injector = _INJECT_LIGHT if use_light else _INJECT
 
@@ -451,6 +544,7 @@ def build_html() -> str:
     #player-wrap {{
       flex: 1; display: flex; align-items: center; justify-content: center;
       background: #000; position: relative; width: 100%; height: 100%;
+      overflow: hidden;
     }}
     
     #hlsvid {{
@@ -459,7 +553,7 @@ def build_html() -> str:
     
     /* Safebox iframe styles */
     #iframe-box {{
-        width: 100%; height: 100%; display: none; position: relative;
+        width: 100%; height: 100%; display: none; position: relative; overflow: hidden;
     }}
     #iframe-box iframe {{
         width: 100%; height: 100%; border: none;
@@ -493,6 +587,47 @@ def build_html() -> str:
       transition: background 0.2s;
     }}
     #vol-btn:hover {{ background: rgba(60,60,60,0.95); }}
+    #fullscreen-btn {{
+      position: absolute; bottom: 14px; left: 14px; z-index: 20;
+      width: 44px; height: 44px; border-radius: 50%;
+      background: rgba(20,20,20,0.82); border: 2px solid rgba(255,255,255,0.2);
+      color: #fff; font-size: 1.3rem; cursor: pointer;
+      display: none; align-items: center; justify-content: center;
+      transition: background 0.2s;
+    }}
+    #fullscreen-btn:hover {{ background: rgba(245,166,35,0.5); }}
+    #fs-btn {{
+      background: #f5a623; border: none; color: #000;
+      padding: 6px 14px; border-radius: 4px; cursor: pointer;
+      font-size: 0.85rem; font-weight: 700; flex-shrink: 0;
+    }}
+    #fs-btn:hover {{ background: #ffba42; }}
+
+    /* CSS fullscreen overlay */
+    #fs-overlay {{
+      display: none;
+      position: fixed;
+      top: 0; left: 0;
+      width: 100vw; height: 100vh;
+      z-index: 999999;
+      background: #000;
+    }}
+    #fs-overlay iframe {{
+      width: 100%; height: 100%; border: none;
+    }}
+    #fs-overlay video {{
+      width: 100%; height: 100%; background: #000;
+    }}
+    #fs-exit-btn {{
+      position: fixed;
+      top: 12px; right: 12px;
+      z-index: 9999999;
+      width: 44px; height: 44px; border-radius: 50%;
+      background: rgba(20,20,20,0.85); border: 2px solid rgba(255,255,255,0.3);
+      color: #fff; font-size: 1.3rem; cursor: pointer;
+      display: none; align-items: center; justify-content: center;
+    }}
+    #fs-exit-btn:hover {{ background: rgba(180,30,30,0.9); }}
   </style>
 </head>
 <body>
@@ -512,10 +647,12 @@ def build_html() -> str:
   <div class="player-area">
     <div class="player-bar">
       <span>Now playing: <span id="now-playing">--</span></span>
+      <button id="fs-btn" onclick="toggleFullscreen()" title="Toggle fullscreen">⛶ Fullscreen</button>
     </div>
     <div id="player-wrap">
       <button id="close-btn" onclick="closePlayer()" title="Close channel">&#x2715;</button>
-      <button id="vol-btn" onclick="toggleMute()" title="Toggle mute">&#x1F507;</button>
+      <button id="vol-btn" onclick="toggleMute()" title="Toggle mute">🔇</button>
+      <button id="fullscreen-btn" onclick="toggleFullscreen()" title="Toggle fullscreen">⛶</button>
       <div id="placeholder" class="placeholder">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
           <circle cx="12" cy="12" r="10"/>
@@ -529,9 +666,10 @@ def build_html() -> str:
       
       <!-- Secure IFrame Area -->
       <div id="iframe-box">
-          <iframe id="vid-frame" src="" 
-            sandbox="allow-scripts allow-same-origin allow-forms allow-pointer-lock"
-            allow="autoplay; fullscreen">
+          <iframe id="vid-frame" src=""
+            sandbox="allow-scripts allow-same-origin allow-forms allow-pointer-lock allow-fullscreen"
+            allow="autoplay; fullscreen"
+            allowfullscreen>
           </iframe>
       </div>
 
@@ -539,6 +677,10 @@ def build_html() -> str:
     </div>
   </div>
 </div>
+
+<!-- Fullscreen overlay — renders completely outside the app layout -->
+<div id="fs-overlay"></div>
+<button id="fs-exit-btn" onclick="exitFsOverlay()" title="Exit fullscreen">&#x2715;</button>
 
 <script>
   const CHANNELS = {channels_json};
@@ -566,8 +708,10 @@ def build_html() -> str:
     document.getElementById('iframe-box').style.display  = which === 'iframe'      ? 'block': 'none';
     document.getElementById('err-box').style.display     = which === 'error'       ? 'flex' : 'none';
     
-    document.getElementById('close-btn').style.display  = (which !== 'placeholder') ? 'flex' : 'none';
-    document.getElementById('vol-btn').style.display    = (which === 'iframe' || which === 'video') ? 'flex' : 'none';
+    document.getElementById('close-btn').style.display       = (which !== 'placeholder') ? 'flex' : 'none';
+    document.getElementById('vol-btn').style.display         = (which === 'iframe' || which === 'video') ? 'flex' : 'none';
+    document.getElementById('fullscreen-btn').style.display  = (which === 'iframe' || which === 'video') ? 'flex' : 'none';
+    // fs-btn is always visible — no change needed
   }}
 
   function destroyAll() {{
@@ -579,12 +723,13 @@ def build_html() -> str:
     ibox.innerHTML = '';
     const newFr = document.createElement('iframe');
     newFr.id = 'vid-frame';
-    newFr.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-forms allow-pointer-lock');
+    newFr.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-forms allow-pointer-lock allow-fullscreen');
     newFr.setAttribute('allow', 'autoplay; fullscreen');
+    newFr.setAttribute('allowfullscreen', '');
     ibox.appendChild(newFr);
 
     isMuted = true;
-    document.getElementById('vol-btn').textContent = 'MUTED';
+    document.getElementById('vol-btn').textContent = '🔇';
   }}
   
 
@@ -601,17 +746,208 @@ def build_html() -> str:
     const iframe = document.getElementById('vid-frame');
     const hlsvid = document.getElementById('hlsvid');
     if (!isMuted) {{
-      btn.textContent = 'SOUND ON';
+      btn.textContent = '🔊';
       hlsvid.muted = false; hlsvid.volume = 1;
       sendFrameControl('unmute');
       try {{ iframe.contentDocument.querySelectorAll('video,audio').forEach(m => {{ m.muted=false; m.volume=1; }}); }} catch(e) {{}}
     }} else {{
-      btn.textContent = 'MUTED';
+      btn.textContent = '🔇';
       hlsvid.muted = true;
       sendFrameControl('mute');
       try {{ iframe.contentDocument.querySelectorAll('video,audio').forEach(m => {{ m.muted=true; }}); }} catch(e) {{}}
     }}
   }}
+
+  var _fsActive = false;
+
+  // Aggressively hide all chrome in a frame, leaving only the video/player iframe.
+  // Uses el.contains() to identify ancestors so nothing gets missed.
+  function _deepExpand(frame, depth) {{
+    if (!frame || depth > 6) return;
+    try {{
+      var d = frame.contentDocument;
+      if (!d || !d.body) return;
+      var SKIP = /chatango|cbox\.ws|doubleclick|googlesyndication|adnxs|taboola|outbrain|popcash/i;
+
+      // Case A: this frame has a <video> — make it fill the viewport
+      var vids = Array.from(d.querySelectorAll('video'));
+      if (vids.length > 0) {{
+        var ps = d.getElementById('__fse_s__'); if (ps) ps.remove();
+        var s = d.createElement('style'); s.id = '__fse_s__';
+        s.textContent = 'html,body{{margin:0!important;padding:0!important;'
+          + 'overflow:hidden!important;background:#000!important}}'
+          + 'video{{position:fixed!important;top:0!important;left:0!important;'
+          + 'width:100vw!important;height:100vh!important;'
+          + 'z-index:2147483647!important;object-fit:contain!important;background:#000!important}}';
+        (d.head || d.documentElement).appendChild(s);
+        // Also hide every non-video, non-ancestor element
+        d.querySelectorAll('body *').forEach(function(el) {{
+          var tag = (el.tagName || '').toUpperCase();
+          if (tag === 'SCRIPT' || tag === 'STYLE' || tag === 'VIDEO') return;
+          var isAnc = vids.some(function(v) {{ return el.contains ? el.contains(v) : false; }});
+          if (!isAnc) el.style.setProperty('display', 'none', 'important');
+        }});
+        return;
+      }}
+
+      // Case B: find the player iframe (prefer the one containing video; else largest)
+      var iframes = Array.from(d.querySelectorAll('iframe'));
+      var pf = null, maxArea = 0;
+      iframes.forEach(function(f) {{
+        if (SKIP.test(f.src || f.getAttribute('src') || '')) return;
+        // Prefer iframe that contains a <video>
+        try {{
+          if (f.contentDocument && f.contentDocument.querySelectorAll('video').length > 0) {{
+            pf = f; maxArea = Infinity; return;
+          }}
+        }} catch(e2) {{}}
+        if (maxArea !== Infinity) {{
+          var a = f.offsetWidth * f.offsetHeight;
+          if (a > maxArea) {{ maxArea = a; pf = f; }}
+        }}
+      }});
+
+      if (!pf) {{
+        // No visible iframe yet — retry after the page finishes rendering
+        setTimeout(function() {{ _deepExpand(frame, depth); }}, 700);
+        return;
+      }}
+
+      // Blacken background
+      d.documentElement.style.setProperty('background', '#000', 'important');
+      d.body.style.setProperty('background', '#000', 'important');
+      d.body.style.setProperty('overflow', 'hidden', 'important');
+      d.body.style.setProperty('margin', '0', 'important');
+
+      // Hide EVERY body element that is not pf and not an ancestor of pf
+      d.querySelectorAll('body *').forEach(function(el) {{
+        var tag = (el.tagName || '').toUpperCase();
+        if (tag === 'SCRIPT' || tag === 'STYLE') return;
+        if (el === pf) return;
+        var isAnc = el.contains ? el.contains(pf) : false;
+        if (!isAnc) {{
+          if (!el.hasAttribute('data-fse-h')) el.setAttribute('data-fse-h', el.style.cssText || '');
+          el.style.setProperty('display', 'none', 'important');
+        }}
+      }});
+
+      // Make pf fill the full viewport
+      if (!pf.hasAttribute('data-fse-p')) pf.setAttribute('data-fse-p', pf.style.cssText || '');
+      pf.style.setProperty('position', 'fixed', 'important');
+      pf.style.setProperty('top', '0', 'important');
+      pf.style.setProperty('left', '0', 'important');
+      pf.style.setProperty('width', '100vw', 'important');
+      pf.style.setProperty('height', '100vh', 'important');
+      pf.style.setProperty('z-index', '2147483647', 'important');
+      pf.style.setProperty('border', 'none', 'important');
+      pf.style.setProperty('display', 'block', 'important');
+
+      // Recurse into pf to expand the video inside it
+      _deepExpand(pf, depth + 1);
+    }} catch(e) {{}}
+  }}
+
+  function _deepCleanup(frame, depth) {{
+    if (!frame || depth > 6) return;
+    try {{
+      var d = frame.contentDocument;
+      if (!d) return;
+      var s = d.getElementById('__fse_s__'); if (s) s.remove();
+      d.querySelectorAll('[data-fse-h]').forEach(function(el) {{
+        el.style.cssText = el.getAttribute('data-fse-h') || '';
+        el.removeAttribute('data-fse-h');
+      }});
+      d.querySelectorAll('[data-fse-p]').forEach(function(el) {{
+        el.style.cssText = el.getAttribute('data-fse-p') || '';
+        el.removeAttribute('data-fse-p');
+      }});
+      d.documentElement.style.removeProperty('background');
+      d.body.style.cssText = '';
+      d.querySelectorAll('iframe').forEach(function(f) {{ _deepCleanup(f, depth + 1); }});
+    }} catch(e) {{}}
+  }}
+
+  function enterFsOverlay() {{
+    if (_fsActive) return;
+    _fsActive = true;
+    const ibox   = document.getElementById('iframe-box');
+    const fr     = document.getElementById('vid-frame');
+    const hlsvid = document.getElementById('hlsvid');
+    const iframeMode = ibox.style.display === 'block';
+
+    document.getElementById('fs-exit-btn').style.display = 'flex';
+    document.getElementById('fs-btn').textContent = '⛶ Exit FS';
+
+    if (iframeMode) {{
+      // Stretch ibox to cover full viewport — no reload, video keeps playing
+      ibox._fsOrig = ibox.style.cssText;
+      ibox.style.cssText = 'position:fixed;top:0;left:0;width:100vw;height:100vh;'
+        + 'z-index:999999;background:#000;display:block;border:none';
+      // Aggressively hide chrome inside the frame tree
+      _deepExpand(fr, 0);
+      setTimeout(function() {{ _deepExpand(fr, 0); }}, 700);
+      // Also fan out fsvid for any frame that has its own handler
+      try {{ fr.contentWindow.postMessage({{__LOCAL_PROXY_CTRL__:'fsvid'}}, '*'); }} catch(e) {{}}
+      setTimeout(function() {{
+        try {{ fr.contentWindow.postMessage({{__LOCAL_PROXY_CTRL__:'fsvid'}}, '*'); }} catch(e) {{}}
+      }}, 800);
+      try {{ ibox.requestFullscreen(); }} catch(e) {{}}
+    }} else {{
+      // HLS mode — clone stream into overlay video element
+      const overlay = document.getElementById('fs-overlay');
+      overlay.innerHTML = '';
+      var fsVid = document.createElement('video');
+      fsVid.src = hlsvid.src; fsVid.controls = true;
+      fsVid.autoplay = true; fsVid.muted = hlsvid.muted;
+      fsVid.style.cssText = 'width:100%;height:100%;background:#000';
+      overlay.appendChild(fsVid);
+      overlay.style.display = 'block';
+      try {{ overlay.requestFullscreen(); }} catch(e) {{}}
+    }}
+  }}
+
+  function exitFsOverlay() {{
+    if (!_fsActive) return;
+    _fsActive = false;
+    const ibox  = document.getElementById('iframe-box');
+    const fr    = document.getElementById('vid-frame');
+    const overlay = document.getElementById('fs-overlay');
+
+    if (ibox._fsOrig !== undefined) {{
+      ibox.style.cssText = ibox._fsOrig;
+      delete ibox._fsOrig;
+    }}
+    _deepCleanup(fr, 0);
+
+    overlay.style.display = 'none';
+    overlay.innerHTML = '';
+    document.getElementById('fs-exit-btn').style.display = 'none';
+    document.getElementById('fs-btn').textContent = '⛶ Fullscreen';
+    try {{ document.exitFullscreen(); }} catch(e) {{}}
+  }}
+
+  function toggleFullscreen() {{
+    if (_fsActive) {{ exitFsOverlay(); }} else {{ enterFsOverlay(); }}
+  }}
+
+  document.addEventListener('fullscreenchange', function() {{
+    if (!document.fullscreenElement && _fsActive) exitFsOverlay();
+  }});
+
+  document.addEventListener('keydown', function(ev) {{
+    if (ev.key === 'Escape') exitFsOverlay();
+    if ((ev.key === 'f' || ev.key === 'F') && !ev.ctrlKey) toggleFullscreen();
+  }});
+
+  document.getElementById('hlsvid').addEventListener('dblclick', function() {{
+    toggleFullscreen();
+  }});
+
+  window.addEventListener('message', function(ev) {{
+    var d = ev && ev.data;
+    if (!d || typeof d !== 'object') return;
+    if (d.__LOCAL_PROXY_CTRL__ === 'dblclick') toggleFullscreen();
+  }});
 
   function selectChannel(id) {{
     const ch = CHANNELS[id];
@@ -631,7 +967,7 @@ def build_html() -> str:
       video.muted = true;
       video.volume = 0;
       isMuted = true;
-      document.getElementById('vol-btn').textContent = 'MUTED';
+      document.getElementById('vol-btn').textContent = '🔇';
       if (Hls.isSupported()) {{
         hlsInstance = new Hls({{ enableWorker: true, lowLatencyMode: true }});
         hlsInstance.loadSource(ch.url);
@@ -653,7 +989,7 @@ def build_html() -> str:
     }} else if (ch.type === 'web') {{
       setView('iframe');
       isMuted = true;
-      document.getElementById('vol-btn').textContent = 'MUTED';
+      document.getElementById('vol-btn').textContent = '🔇';
       const _fr = document.getElementById('vid-frame');
       _fr.onload = function() {{
         setTimeout(function(){{ sendFrameControl(isMuted ? 'mute' : 'unmute'); }}, 250);
@@ -700,6 +1036,26 @@ def build_html() -> str:
           }});
           // Kill ad sidebar columns
           _d.querySelectorAll('.col-span-3').forEach(function(e){{e.style.display='none';}});
+          // Fix 4: hide social share bars and ad containers
+          _d.querySelectorAll('[class*="share"],[id*="share"],[class*="social"],[id*="social"]').forEach(function(e){{e.style.display='none';}});
+          _d.querySelectorAll('[class*="ad-"],[class*="-ad"],[id*="banner"],[class*="banner"],[class*="advertisement"],[id*="advertisement"]').forEach(function(e){{e.style.display='none';}});
+        }} catch(e) {{}}
+
+        // Fix 5: MutationObserver to auto-hide UNMUTE banner as soon as it appears
+        try {{
+          var _win = _fr.contentWindow || _fr.contentDocument.defaultView;
+          var _moDoc = _fr.contentDocument;
+          var _unmuteMo = new _win.MutationObserver(function() {{
+            _moDoc.querySelectorAll('button,div,span,a,p').forEach(function(el) {{
+              var t = ((el.textContent||el.value||'')+'').replace(/\\s+/g,' ').trim().toUpperCase();
+              if (t.length < 60 && /UNMUTE|CLICK HERE TO UNMUTE/.test(t)) {{
+                try{{ el.click(); }}catch(e){{}}
+                el.style.setProperty('display','none','important');
+              }}
+            }});
+          }});
+          _unmuteMo.observe(_moDoc.documentElement, {{childList:true, subtree:true}});
+          setTimeout(function(){{ _unmuteMo.disconnect(); }}, 30000);
         }} catch(e) {{}}
       }};
       _fr.src = '{PROXY_HOST}/proxy?url=' + encodeURIComponent(ch.url);
@@ -731,6 +1087,15 @@ class Handler(BaseHTTPRequestHandler):
               pass
         elif parsed.path == "/proxy":
             target = parse_qs(parsed.query).get("url", [None])[0]
+            if target and any(d in target.lower() for d in ['chatango.com', 'chatango.net', 'cbox.ws']):
+                blank = b'<html><body></body></html>'
+                self.send_response(200)
+                self.send_header('Content-Type', 'text/html; charset=utf-8')
+                self.send_header('Content-Length', len(blank))
+                self.end_headers()
+                try: self.wfile.write(blank)
+                except: pass
+                return
             content = fetch_and_clean(target) if target else None
             if content:
                 data = content.encode("utf-8")
