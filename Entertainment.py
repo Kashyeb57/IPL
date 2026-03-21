@@ -30,6 +30,7 @@ CHANNELS = {
     "10": {"name": "DSTV (614p)",             "url": "http://46.249.95.140:8081/hls/data.m3u8",                 "type": "hls"},
     "11": {"name": "Star Sports 2 (Old)",     "url": "http://tvn1.chowdhury-shaheb.com/starsport2/index.m3u8", "type": "hls"},
     "12": {"name": "Star Sports HD1",         "url": "http://116.90.120.151:8000/play/a0gs/index.m3u8",        "type": "hls"},
+    "13": {"name": "Star Sports 1 Hindi HD",  "url": "https://jiaotvpllive.otvpllive.net/bpk-tv/Star_Sports_1_Hindi_HD1_Hindi_BTS/output/index.m3u8", "type": "hls"},
 }
 
 
@@ -972,7 +973,8 @@ def build_html() -> str:
       document.getElementById('vol-btn').textContent = '🔇';
       if (Hls.isSupported()) {{
         hlsInstance = new Hls({{ enableWorker: true, lowLatencyMode: true }});
-        hlsInstance.loadSource(ch.url);
+        var hlsSrc = '/hlsproxy?url=' + encodeURIComponent(ch.url);
+        hlsInstance.loadSource(hlsSrc);
         hlsInstance.attachMedia(video);
         hlsInstance.on(Hls.Events.MANIFEST_PARSED, () => {{ video.muted = isMuted; video.play(); }});
         hlsInstance.on(Hls.Events.ERROR, (_, data) => {{
@@ -1115,6 +1117,51 @@ class Handler(BaseHTTPRequestHandler):
             else:
                 self.send_response(502)
                 self.end_headers()
+        elif parsed.path == "/hlsproxy":
+            target = parse_qs(parsed.query).get("url", [None])[0]
+            if not target:
+                self.send_response(400); self.end_headers(); return
+            try:
+                import urllib.request as _ur
+                _tp = urllib.parse.urlparse(target)
+                req = _ur.Request(target, headers={
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+                    'Accept': '*/*',
+                    'Accept-Language': 'en-IN,en;q=0.9,hi;q=0.8',
+                    'Origin': _tp.scheme + '://' + _tp.netloc,
+                    'Referer': 'https://www.jio.com/',
+                    'X-Forwarded-For': '106.51.0.1',
+                })
+                with _ur.urlopen(req, timeout=10) as resp:
+                    raw = resp.read()
+                    ctype = resp.headers.get('Content-Type', 'application/octet-stream')
+                # If it's an m3u8 playlist, rewrite segment URLs to go through /hlsproxy
+                if b'#EXTM3U' in raw[:20] or target.endswith('.m3u8') or 'mpegurl' in ctype.lower():
+                    base = target.rsplit('/', 1)[0] + '/'
+                    lines = raw.decode('utf-8', errors='replace').splitlines()
+                    out = []
+                    for line in lines:
+                        stripped = line.strip()
+                        if stripped and not stripped.startswith('#'):
+                            if stripped.startswith('http://') or stripped.startswith('https://'):
+                                abs_seg = stripped
+                            else:
+                                abs_seg = base + stripped
+                            line = '/hlsproxy?url=' + urllib.parse.quote(abs_seg, safe='')
+                        out.append(line)
+                    raw = '\n'.join(out).encode('utf-8')
+                    ctype = 'application/vnd.apple.mpegurl'
+                self.send_response(200)
+                self.send_header('Content-Type', ctype)
+                self.send_header('Access-Control-Allow-Origin', '*')
+                self.send_header('Cache-Control', 'no-store')
+                self.send_header('Content-Length', len(raw))
+                self.end_headers()
+                try: self.wfile.write(raw)
+                except: pass
+            except Exception:
+                self.send_response(502); self.end_headers()
+            return
         elif parsed.path == "/webplay":
             ch_id = parse_qs(parsed.query).get("id", [None])[0]
             ch = CHANNELS.get(ch_id) if ch_id else None
