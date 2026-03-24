@@ -29,7 +29,13 @@ CHANNELS = {
     "9": {"name": "Cricket Gold",             "url": "https://streams2.sofast.tv/scheduler/scheduleMaster/418.m3u8", "type": "hls"},
     "10": {"name": "DSTV (614p)",             "url": "http://46.249.95.140:8081/hls/data.m3u8",                 "type": "hls"},
     "11": {"name": "Star Sports 2 (Old)",     "url": "http://tvn1.chowdhury-shaheb.com/starsport2/index.m3u8", "type": "hls"},
-    "12": {"name": "Star Sports HD1",         "url": "http://116.90.120.151:8000/play/a0gs/index.m3u8",        "type": "hls"},
+    "12": {"name": "Star Sports HD1",          "url": "http://116.90.120.151:8000/play/a0gs/index.m3u8",        "type": "hls"},
+    "13": {"name": "Star Sports 1 Hindi (576p)",    "url": "http://116.90.120.151:8000/play/a0h1/index.m3u8",   "type": "hls"},
+    "14": {"name": "Star Sports 1 Hindi HD (1080p)","url": "http://116.90.120.151:8000/play/a0je/index.m3u8",   "type": "hls"},
+    "15": {"name": "Star Sports 2 HD (1080p)",      "url": "http://116.90.120.151:8000/play/a0jb/index.m3u8",   "type": "hls"},
+    "16": {"name": "Star Sports 2 Hindi (576p)",    "url": "http://116.90.120.151:8000/play/a0jc/index.m3u8",   "type": "hls"},
+    "17": {"name": "Star Sports 2 Hindi HD (1080p)","url": "http://116.90.120.151:8000/play/a0hi/index.m3u8",   "type": "hls"},
+    "18": {"name": "Star Sports 3 (576p)",          "url": "http://103.161.153.165:8000/play/a05p/index.m3u8",  "type": "hls"},
 }
 
 
