@@ -979,7 +979,7 @@ def build_html() -> str:
       if (Hls.isSupported()) {{
         hlsInstance = new Hls({{ enableWorker: true, lowLatencyMode: true }});
         var hlsSrc = ch.url;
-        if (window.location.protocol === 'https:' && hlsSrc.startsWith('http://')) {{
+        if (hlsSrc.startsWith('http://')) {{
           hlsSrc = '/hlsproxy?url=' + encodeURIComponent(hlsSrc);
         }}
         hlsInstance.loadSource(hlsSrc);
