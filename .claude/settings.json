@@ -7,7 +7,27 @@
       "WebFetch(domain:stream.crichd.sc)",
       "WebFetch(domain:stream.crichd.vip)",
       "WebFetch(domain:103.89.248.18)",
-      "WebFetch(domain:chanel.dekhaott.com)"
+      "WebFetch(domain:chanel.dekhaott.com)",
+      "WebFetch(domain:iptvcat.net)",
+      "Bash(python3 -c \"import json,sys; data=json.load\\(sys.stdin\\); [print\\(x[''''name''''], x.get\\(''''download_url'''',''''''''\\)\\) for x in data]\")",
+      "WebSearch",
+      "WebFetch(domain:akamai.anytv.live)",
+      "WebFetch(domain:tvsen7.aynaott.com)",
+      "WebFetch(domain:gist.githubusercontent.com)",
+      "WebFetch(domain:port.denver1769.in)",
+      "WebFetch(domain:varun-iptv.netlify.app)",
+      "WebFetch(domain:hot-star.varun-iptv.repl.co)",
+      "WebFetch(domain:iptvcat.org)",
+      "WebFetch(domain:hellopeopletv.gotohosty.com)",
+      "Bash(gh repo:*)",
+      "Bash(python3 -c \"import json,sys; files=json.load\\(sys.stdin\\); [print\\(f[''''name''''], f.get\\(''''download_url'''',''''''''\\)\\) for f in files]\")",
+      "WebFetch(domain:gist.github.com)",
+      "WebFetch(domain:streamtest.in)",
+      "WebFetch(domain:prasarbharati.gov.in)",
+      "WebFetch(domain:indiantvinfo.com)",
+      "WebFetch(domain:t.me)",
+      "WebFetch(domain:padmaonline.duckdns.org)",
+      "WebFetch(domain:feeds.intoday.in)"
     ]
   }
 }
