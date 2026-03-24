@@ -675,7 +675,6 @@ def build_html() -> str:
       <!-- Secure IFrame Area -->
       <div id="iframe-box">
           <iframe id="vid-frame" src=""
-            sandbox="allow-scripts allow-same-origin allow-forms allow-pointer-lock allow-fullscreen"
             allow="autoplay; fullscreen"
             allowfullscreen>
           </iframe>
@@ -731,7 +730,6 @@ def build_html() -> str:
     ibox.innerHTML = '';
     const newFr = document.createElement('iframe');
     newFr.id = 'vid-frame';
-    newFr.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-forms allow-pointer-lock allow-fullscreen');
     newFr.setAttribute('allow', 'autoplay; fullscreen');
     newFr.setAttribute('allowfullscreen', '');
     ibox.appendChild(newFr);
@@ -1070,7 +1068,7 @@ def build_html() -> str:
           setTimeout(function(){{ _unmuteMo.disconnect(); }}, 30000);
         }} catch(e) {{}}
       }};
-      _fr.src = '{PROXY_PATH}' + encodeURIComponent(ch.url);
+      _fr.src = ch.url.startsWith('https://') ? ch.url : '{PROXY_PATH}' + encodeURIComponent(ch.url);
     }}
   }}
 </script>
