@@ -30,12 +30,12 @@ CHANNELS = {
     "10": {"name": "DSTV (614p)",             "url": "http://46.249.95.140:8081/hls/data.m3u8",                 "type": "hls"},
     "11": {"name": "Star Sports 2 (Old)",     "url": "http://tvn1.chowdhury-shaheb.com/starsport2/index.m3u8", "type": "hls"},
     "12": {"name": "Star Sports HD1",          "url": "http://116.90.120.151:8000/play/a0gs/index.m3u8",        "type": "hls"},
-    "13": {"name": "Star Sports 1 Hindi (576p)",    "url": "http://116.90.120.151:8000/play/a0h1/index.m3u8",   "type": "hls"},
-    "14": {"name": "Star Sports 1 Hindi HD (1080p)","url": "http://116.90.120.151:8000/play/a0je/index.m3u8",   "type": "hls"},
-    "15": {"name": "Star Sports 2 HD (1080p)",      "url": "http://116.90.120.151:8000/play/a0jb/index.m3u8",   "type": "hls"},
-    "16": {"name": "Star Sports 2 Hindi (576p)",    "url": "http://116.90.120.151:8000/play/a0jc/index.m3u8",   "type": "hls"},
-    "17": {"name": "Star Sports 2 Hindi HD (1080p)","url": "http://116.90.120.151:8000/play/a0hi/index.m3u8",   "type": "hls"},
-    "18": {"name": "Star Sports 3 (576p)",          "url": "http://103.161.153.165:8000/play/a05p/index.m3u8",  "type": "hls"},
+    "13": {"name": "Star Sports 1 HD (Web)",        "url": "https://dadocric.st/player.php?id=ss1hd",       "type": "web"},
+    "14": {"name": "Star Sports 1 Hindi HD (Web)", "url": "https://dadocric.st/player.php?id=ss1hindihd",  "type": "web"},
+    "15": {"name": "Star Sports 2 HD (Web)",       "url": "https://dadocric.st/player.php?id=ss2hd",       "type": "web"},
+    "16": {"name": "Star Sports 2 Hindi (Web)",    "url": "https://dadocric.st/player.php?id=ss2hindi",    "type": "web"},
+    "17": {"name": "Star Sports 2 Hindi HD (Web)", "url": "https://dadocric.st/player.php?id=ss2hindihd",  "type": "web"},
+    "18": {"name": "Star Sports 3 (Web)",          "url": "https://dadocric.st/player.php?id=ss3",         "type": "web"},
 }
 
 
