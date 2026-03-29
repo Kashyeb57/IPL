@@ -21,21 +21,15 @@ CHANNELS = {
     "2": {"name": "Willow Extra",             "url": "https://dadocric.st/player.php?id=willowextra", "type": "web"},
     "3": {"name": "PTV Sports",               "url": "https://dadocric.st/player.php?id=ptvsp",       "type": "web"},
     "4": {"name": "CricGo 2",                 "url": "https://dadocric.st/player.php?id=cricgo2",     "type": "web"},
-    "5": {"name": "Star Sports 1 (Web)",      "url": "https://dadocric.st/player.php?id=ss1",         "type": "web"},
-    "6": {"name": "Star Sports 2 (Web)",      "url": "https://dadocric.st/player.php?id=ss2",         "type": "web"},
-    "7": {"name": "Star Sports 1 Hindi (Web)","url": "https://dadocric.st/player.php?id=ss1hindi",    "type": "web"},
+    "13": {"name": "Star Sports (P2)",         "url": "https://dadocric.st/player2.php?id=starsp",      "type": "web"},
+    "14": {"name": "Star Sports 3 (P2)",       "url": "https://dadocric.st/player2.php?id=starsp3",     "type": "web"},
     # --- Live HLS Streams ---
     "8": {"name": "Willow Sports",            "url": "https://d36r8jifhgsk5j.cloudfront.net/Willow_TV.m3u8", "type": "hls"},
     "9": {"name": "Cricket Gold",             "url": "https://streams2.sofast.tv/scheduler/scheduleMaster/418.m3u8", "type": "hls"},
     "10": {"name": "DSTV (614p)",             "url": "http://46.249.95.140:8081/hls/data.m3u8",                 "type": "hls"},
     "11": {"name": "Star Sports 2 (Old)",     "url": "http://tvn1.chowdhury-shaheb.com/starsport2/index.m3u8", "type": "hls"},
     "12": {"name": "Star Sports HD1",          "url": "http://116.90.120.151:8000/play/a0gs/index.m3u8",        "type": "hls"},
-    "13": {"name": "Star Sports 1 HD (Web)",        "url": "https://dadocric.st/player.php?id=ss1hd",       "type": "web"},
-    "14": {"name": "Star Sports 1 Hindi HD (Web)", "url": "https://dadocric.st/player.php?id=ss1hindihd",  "type": "web"},
-    "15": {"name": "Star Sports 2 HD (Web)",       "url": "https://dadocric.st/player.php?id=ss2hd",       "type": "web"},
-    "16": {"name": "Star Sports 2 Hindi (Web)",    "url": "https://dadocric.st/player.php?id=ss2hindi",    "type": "web"},
-    "17": {"name": "Star Sports 2 Hindi HD (Web)", "url": "https://dadocric.st/player.php?id=ss2hindihd",  "type": "web"},
-    "18": {"name": "Star Sports 3 (Web)",          "url": "https://dadocric.st/player.php?id=ss3",         "type": "web"},
+    
 }
 
 
