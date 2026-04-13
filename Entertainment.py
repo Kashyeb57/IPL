@@ -1,4 +1,4 @@
-import sys
+﻿import sys
 import json
 import re
 import ssl
@@ -31,13 +31,13 @@ CHANNELS = {
     "12": {"name": "Star Sports HD1",          "url": "http://116.90.120.151:8000/play/a0gs/index.m3u8",        "type": "hls"},
     # --- News Channels ---
     "5": {"name": "CNN-News18",               "url": "https://www.youtube.com/embed/AdFDTT6gKnk?autoplay=1", "type": "web"},
-
     "17": {"name": "FOX",                      "url": "https://www.youtube.com/embed/3CCRst9jmck?autoplay=1", "type": "web"},
+    "18": {"name": "ABC",                      "url": "https://www.youtube.com/embed/iipR5yUp36o?autoplay=1", "type": "web"},
+    "19": {"name": "CNBC",                     "url": "https://www.youtube.com/embed/9NyxcX3rhQs?autoplay=1", "type": "web"},
+
 
     
 }
-
-
 _AD_PAT = '|'.join([
     'adzilla', r'1win\.', 'doubleclick', 'googlesyndication',
     'amazon-adsystem', r'openx\.net', r'pubmatic\.com', 'rubiconproject',
@@ -59,7 +59,7 @@ _INJECT = (
     '[id*="cid00200"],'
     '.col-span-3'
     '{display:none!important}'
-    # Hide chat widget (Chatango) in all forms — including CricHD right-panel wrappers
+    # Hide chat widget (Chatango) in all forms â€” including CricHD right-panel wrappers
     '#ch,[id*="chatango"],[class*="chatango"],'
     '#cxch,[id*="cxch"],[class*="cxch"],'
     '#cxbox,[id*="cxbox"],[class*="cxbox"],'
@@ -121,7 +121,7 @@ _INJECT = (
     '}catch(e){}'
     '}'
     'function killAds(){'
-    # First pass: unmute buttons — unhide them if CSS hid them, click, then re-hide
+    # First pass: unmute buttons â€” unhide them if CSS hid them, click, then re-hide
     'document.querySelectorAll("button,div,span,a,input,p").forEach(function(el){'
     'var txt=((el.textContent||el.value||el.getAttribute("aria-label")||"")+"").replace(/\\s+/g," ").trim().toUpperCase();'
     'if(/UNMUTE|CLICK HERE TO UNMUTE|SOUND ON|TURN ON SOUND|ENABLE SOUND|AUDIO ON/.test(txt)&&txt.length<60){'
@@ -239,7 +239,7 @@ _INJECT = (
     'setInterval(killAds,1500);'
     'var mo=new MutationObserver(killAds);'
     'mo.observe(document.documentElement,{childList:true,subtree:true});'
-    # Double-click → postMessage to parent (capture phase so player handlers can't block it)
+    # Double-click â†’ postMessage to parent (capture phase so player handlers can't block it)
     'function _sendDbl(){try{window.top.postMessage({__LOCAL_PROXY_CTRL__:"dblclick"},"*");}catch(ex){}}'
     'document.addEventListener("dblclick",_sendDbl,true);'
     'window.addEventListener("dblclick",_sendDbl,true);'
@@ -410,7 +410,7 @@ def fetch_and_clean(url):
     html = re.sub(r'<script[^>]+src=["\'][^"\']*chatango[^"\']*["\'][^>]*/>', '', html, flags=re.IGNORECASE)
     # Strip cbox chat scripts
     html = re.sub(r'<script[^>]+src=["\'][^"\']*cbox\.ws[^"\']*["\'][^>]*>.*?</script>', '', html, flags=re.IGNORECASE | re.DOTALL)
-    # Neutralise frame-busting: if(window!=top){ … }
+    # Neutralise frame-busting: if(window!=top){ â€¦ }
     html = _FRAME_BUST.sub('if(false)', html)
     # Strip beforeunload hijack
     html = re.sub(r"<script[^>]*>\s*window\.addEventListener\('beforeunload'.*?</script>", '', html, flags=re.DOTALL | re.IGNORECASE)
@@ -429,7 +429,7 @@ def fetch_and_clean(url):
         # Strip any inline <script> that references chatango
         html = re.sub(r'<script[^>]*>[^<]*chatango[^<]*</script>', '', html, flags=re.IGNORECASE)
         html = re.sub(r'<script[^>]*>.*?chatango.*?</script>', '', html, flags=re.DOTALL | re.IGNORECASE)
-        # Neutralise cid00200 chatango embed containers (replace opening tag → hidden)
+        # Neutralise cid00200 chatango embed containers (replace opening tag â†’ hidden)
         html = re.sub(r'<div([^>]*)id="cid00200([^"]*)"', r'<div\1id="cid00200\2" style="display:none!important"', html, flags=re.IGNORECASE)
         # Neutralise any <div class="...col-span-3..."> right-column container
         html = re.sub(r'(<div[^>]*class="[^"]*\bcol-span-3\b[^"]*")', r'\1 style="display:none!important"', html, flags=re.IGNORECASE)
@@ -492,7 +492,7 @@ def build_html() -> str:
     
     for key, ch in CHANNELS.items():
         name_upper = ch["name"].upper()
-        if "NEWS" in name_upper or "CNN" in name_upper or "FOX" in name_upper:
+        if "NEWS" in name_upper or "CNN" in name_upper or "FOX" in name_upper or "ABC" in name_upper or "CNBC" in name_upper:
             news_streams.append((key, ch))
         elif ch["type"] == "hls":
             hls_streams.append((key, ch))
@@ -682,12 +682,12 @@ def build_html() -> str:
   <div class="player-area">
     <div class="player-bar">
       <span>Now playing: <span id="now-playing">--</span></span>
-      <button id="fs-btn" onclick="toggleFullscreen()" title="Toggle fullscreen">⛶ Fullscreen</button>
+      <button id="fs-btn" onclick="toggleFullscreen()" title="Toggle fullscreen">â›¶ Fullscreen</button>
     </div>
     <div id="player-wrap">
       <button id="close-btn" onclick="closePlayer()" title="Close channel">&#x2715;</button>
-      <button id="vol-btn" onclick="toggleMute()" title="Toggle mute">🔇</button>
-      <button id="fullscreen-btn" onclick="toggleFullscreen()" title="Toggle fullscreen">⛶</button>
+      <button id="vol-btn" onclick="toggleMute()" title="Toggle mute">ðŸ”‡</button>
+      <button id="fullscreen-btn" onclick="toggleFullscreen()" title="Toggle fullscreen">â›¶</button>
       <div id="placeholder" class="placeholder">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
           <circle cx="12" cy="12" r="10"/>
@@ -712,7 +712,7 @@ def build_html() -> str:
   </div>
 </div>
 
-<!-- Fullscreen overlay — renders completely outside the app layout -->
+<!-- Fullscreen overlay â€” renders completely outside the app layout -->
 <div id="fs-overlay"></div>
 <button id="fs-exit-btn" onclick="exitFsOverlay()" title="Exit fullscreen">&#x2715;</button>
 
@@ -745,7 +745,7 @@ def build_html() -> str:
     document.getElementById('close-btn').style.display       = (which !== 'placeholder') ? 'flex' : 'none';
     document.getElementById('vol-btn').style.display         = (which === 'iframe' || which === 'video') ? 'flex' : 'none';
     document.getElementById('fullscreen-btn').style.display  = (which === 'iframe' || which === 'video') ? 'flex' : 'none';
-    // fs-btn is always visible — no change needed
+    // fs-btn is always visible â€” no change needed
   }}
 
   function destroyAll() {{
@@ -762,7 +762,7 @@ def build_html() -> str:
     ibox.appendChild(newFr);
 
     isMuted = true;
-    document.getElementById('vol-btn').textContent = '🔇';
+    document.getElementById('vol-btn').textContent = 'ðŸ”‡';
   }}
   
 
@@ -779,12 +779,12 @@ def build_html() -> str:
     const iframe = document.getElementById('vid-frame');
     const hlsvid = document.getElementById('hlsvid');
     if (!isMuted) {{
-      btn.textContent = '🔊';
+      btn.textContent = 'ðŸ”Š';
       hlsvid.muted = false; hlsvid.volume = 1;
       sendFrameControl('unmute');
       try {{ iframe.contentDocument.querySelectorAll('video,audio').forEach(m => {{ m.muted=false; m.volume=1; }}); }} catch(e) {{}}
     }} else {{
-      btn.textContent = '🔇';
+      btn.textContent = 'ðŸ”‡';
       hlsvid.muted = true;
       sendFrameControl('mute');
       try {{ iframe.contentDocument.querySelectorAll('video,audio').forEach(m => {{ m.muted=true; }}); }} catch(e) {{}}
@@ -802,7 +802,7 @@ def build_html() -> str:
       if (!d || !d.body) return;
       var SKIP = /chatango|cbox\.ws|doubleclick|googlesyndication|adnxs|taboola|outbrain|popcash/i;
 
-      // Case A: this frame has a <video> — make it fill the viewport
+      // Case A: this frame has a <video> â€” make it fill the viewport
       var vids = Array.from(d.querySelectorAll('video'));
       if (vids.length > 0) {{
         var ps = d.getElementById('__fse_s__'); if (ps) ps.remove();
@@ -841,7 +841,7 @@ def build_html() -> str:
       }});
 
       if (!pf) {{
-        // No visible iframe yet — retry after the page finishes rendering
+        // No visible iframe yet â€” retry after the page finishes rendering
         setTimeout(function() {{ _deepExpand(frame, depth); }}, 700);
         return;
       }}
@@ -909,10 +909,10 @@ def build_html() -> str:
     const iframeMode = ibox.style.display === 'block';
 
     document.getElementById('fs-exit-btn').style.display = 'flex';
-    document.getElementById('fs-btn').textContent = '⛶ Exit FS';
+    document.getElementById('fs-btn').textContent = 'â›¶ Exit FS';
 
     if (iframeMode) {{
-      // Stretch ibox to cover full viewport — no reload, video keeps playing
+      // Stretch ibox to cover full viewport â€” no reload, video keeps playing
       ibox._fsOrig = ibox.style.cssText;
       ibox.style.cssText = 'position:fixed;top:0;left:0;width:100vw;height:100vh;'
         + 'z-index:999999;background:#000;display:block;border:none';
@@ -926,7 +926,7 @@ def build_html() -> str:
       }}, 800);
       try {{ ibox.requestFullscreen(); }} catch(e) {{}}
     }} else {{
-      // HLS mode — clone stream into overlay video element
+      // HLS mode â€” clone stream into overlay video element
       const overlay = document.getElementById('fs-overlay');
       overlay.innerHTML = '';
       var fsVid = document.createElement('video');
@@ -955,7 +955,7 @@ def build_html() -> str:
     overlay.style.display = 'none';
     overlay.innerHTML = '';
     document.getElementById('fs-exit-btn').style.display = 'none';
-    document.getElementById('fs-btn').textContent = '⛶ Fullscreen';
+    document.getElementById('fs-btn').textContent = 'â›¶ Fullscreen';
     try {{ document.exitFullscreen(); }} catch(e) {{}}
   }}
 
@@ -1000,7 +1000,7 @@ def build_html() -> str:
       video.muted = true;
       video.volume = 0;
       isMuted = true;
-      document.getElementById('vol-btn').textContent = '🔇';
+      document.getElementById('vol-btn').textContent = 'ðŸ”‡';
       if (Hls.isSupported()) {{
         hlsInstance = new Hls({{ enableWorker: true, lowLatencyMode: true }});
         var hlsSrc = ch.url;
@@ -1026,7 +1026,7 @@ def build_html() -> str:
     }} else if (ch.type === 'web') {{
       setView('iframe');
       isMuted = true;
-      document.getElementById('vol-btn').textContent = '🔇';
+      document.getElementById('vol-btn').textContent = 'ðŸ”‡';
       const _fr = document.getElementById('vid-frame');
       _fr.onload = function() {{
         setTimeout(function(){{ sendFrameControl(isMuted ? 'mute' : 'unmute'); }}, 250);
@@ -1253,3 +1253,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+

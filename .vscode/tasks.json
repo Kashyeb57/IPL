@@ -1,0 +1,16 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Run IPL dashboard",
+			"type": "shell",
+			"command": "python",
+			"args": [
+				"-B",
+				"Entertainment.py"
+			],
+			"isBackground": true,
+			"group": "build"
+		}
+	]
+}
