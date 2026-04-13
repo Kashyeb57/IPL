@@ -29,6 +29,11 @@ CHANNELS = {
     "10": {"name": "DSTV (614p)",             "url": "http://46.249.95.140:8081/hls/data.m3u8",                 "type": "hls"},
     "11": {"name": "Star Sports 2 (Old)",     "url": "http://tvn1.chowdhury-shaheb.com/starsport2/index.m3u8", "type": "hls"},
     "12": {"name": "Star Sports HD1",          "url": "http://116.90.120.151:8000/play/a0gs/index.m3u8",        "type": "hls"},
+    # --- News Channels ---
+    "5": {"name": "CNN-News18",               "url": "https://www.youtube.com/embed/AdFDTT6gKnk?autoplay=1", "type": "web"},
+
+    "17": {"name": "FOX",                      "url": "https://www.youtube.com/embed/3CCRst9jmck?autoplay=1", "type": "web"},
+
     
 }
 
@@ -480,16 +485,44 @@ def build_html() -> str:
     channels_json = json.dumps(CHANNELS)
 
     sidebar_items = ""
-    prev_type = None
+    # Group channels into categories
+    web_cricket = []
+    hls_streams = []
+    news_streams = []
+    
     for key, ch in CHANNELS.items():
-        if ch["type"] == "web" and prev_type != "web":
-            sidebar_items += '<div class="section-label">Cricket Web Players</div>'
-        elif ch["type"] == "hls" and prev_type != "hls":
-            sidebar_items += '<div class="section-label">Star Sports (Live HLS)</div>'
-        prev_type = ch["type"]
-        badge     = "WEB" if ch["type"] == "web" else "HLS"
-        badge_cls = "badge-web" if ch["type"] == "web" else "badge-hls"
-        sidebar_items += f'''
+        name_upper = ch["name"].upper()
+        if "NEWS" in name_upper or "CNN" in name_upper or "FOX" in name_upper:
+            news_streams.append((key, ch))
+        elif ch["type"] == "hls":
+            hls_streams.append((key, ch))
+        else:
+            web_cricket.append((key, ch))
+            
+    if web_cricket:
+        sidebar_items += '<div class="section-label">Cricket Web Players</div>'
+        for key, ch in web_cricket:
+            sidebar_items += f'''
+        <div class="ch-item" data-id="{key}" onclick="selectChannel('{key}')">
+          <span class="badge badge-web">WEB</span>
+          <span class="ch-name">{ch["name"]}</span>
+        </div>'''
+        
+    if hls_streams:
+        sidebar_items += '<div class="section-label">Star Sports (Live HLS)</div>'
+        for key, ch in hls_streams:
+            sidebar_items += f'''
+        <div class="ch-item" data-id="{key}" onclick="selectChannel('{key}')">
+          <span class="badge badge-hls">HLS</span>
+          <span class="ch-name">{ch["name"]}</span>
+        </div>'''
+        
+    if news_streams:
+        sidebar_items += '<div class="section-label">News Quota</div>'
+        for key, ch in news_streams:
+            badge     = "WEB" if ch["type"] == "web" else "HLS"
+            badge_cls = "badge-web" if ch["type"] == "web" else "badge-hls"
+            sidebar_items += f'''
         <div class="ch-item" data-id="{key}" onclick="selectChannel('{key}')">
           <span class="badge {badge_cls}">{badge}</span>
           <span class="ch-name">{ch["name"]}</span>
